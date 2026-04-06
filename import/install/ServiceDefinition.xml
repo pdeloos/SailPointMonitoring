@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE ServiceDefinition PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<ServiceDefinition name="MonitoringService" executor="com.plugin.monitoring.service.MonitoringService" interval="60" hosts="global">
+  <Attributes>
+    <Map>
+      <entry key="pluginName" value="SailPointMonitoring"/>
+    </Map>
+  </Attributes>
+</ServiceDefinition>

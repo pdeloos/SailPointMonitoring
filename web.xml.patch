@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ============================================================
+    WEB.XML AANPASSING – Environment Monitoring Plugin
+    ============================================================
+    Locatie: $SAILPOINT_HOME/WEB-INF/web.xml
+
+    Voeg het onderstaande <servlet> + <servlet-mapping> blok toe
+    aan de bestaande web.xml, direct NA het bestaande
+    SailPointRestApplication servlet-blok.
+
+    LET OP: dit is een aanpassing aan de IIQ-installatie zelf,
+    NIET aan de plugin-zip. Na een IIQ-upgrade moet u dit
+    opnieuw toepassen.
+    ============================================================
+-->
+
+<!--
+    ════════════════════════════════════════════════════════════
+    STAP 1 – Zoek in web.xml naar het bestaande REST-servlet,
+    dat er ongeveer zo uitziet:
+
+    <servlet>
+        <servlet-name>SailPointRestApplication</servlet-name>
+        <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+        <init-param>
+            <param-name>javax.ws.rs.Application</param-name>
+            <param-value>sailpoint.rest.SailPointRestApplication</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    STAP 2 – Voeg HIERONDER toe:
+    ════════════════════════════════════════════════════════════
+-->
+
+<servlet>
+    <servlet-name>MonitoringPluginRestApplication</servlet-name>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param>
+        <param-name>javax.ws.rs.Application</param-name>
+        <param-value>com.plugin.monitoring.rest.MonitorCustomRest</param-value>
+    </init-param>
+    <load-on-startup>2</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>MonitoringPluginRestApplication</servlet-name>
+    <!--
+        Aanroepbaar via:
+          GET  /identityiq/monitoringPlugin/monitoring/config
+          PUT  /identityiq/monitoringPlugin/monitoring/config
+          POST /identityiq/monitoringPlugin/monitoring/runNow
+    -->
+    <url-pattern>/monitoringPlugin/*</url-pattern>
+</servlet-mapping>
+
+<!--
+    ════════════════════════════════════════════════════════════
+    STAP 3 – Herstart de applicatieserver (Tomcat/JBoss/WAS).
+    ════════════════════════════════════════════════════════════
+
+    Na herstart is de plugin bereikbaar op bijv.:
+      https://iiq.voorbeeld.nl/identityiq/monitoringPlugin/monitoring/config
+
+    De UI in index.html gebruikt dit pad via:
+      const API = SailPoint.CONTEXT_PATH + '/monitoringPlugin/monitoring';
+    ════════════════════════════════════════════════════════════
+-->

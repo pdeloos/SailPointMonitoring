@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<title>Environment Monitoring Plugin</title>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --surface:  #181c25;
+    --border:   #2a2f3d;
+    --accent:   #3b82f6;
+    --accent2:  #10b981;
+    --warn:     #f59e0b;
+    --error:    #ef4444;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --mono:     'JetBrains Mono', 'Fira Code', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif;
+         font-size: 14px; padding: 24px; }
+
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 28px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:900px){ .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: 10px; padding: 20px; }
+  .card h2 { font-size: 13px; font-weight: 600; text-transform: uppercase;
+             letter-spacing: .8px; color: var(--accent); margin-bottom: 16px; }
+
+  label  { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=password], textarea, select {
+    width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-size: 13px; outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { font-family: var(--mono); font-size: 12px; resize: vertical; }
+  .field { margin-bottom: 14px; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between;
+                padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; }
+  .toggle { position: relative; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--border);
+            border-radius: 20px; cursor: pointer; transition: background .2s; }
+  .slider:before { content: ''; position: absolute; height: 14px; width: 14px;
+                   left: 3px; bottom: 3px; background: white; border-radius: 50%;
+                   transition: transform .2s; }
+  input:checked + .slider { background: var(--accent2); }
+  input:checked + .slider:before { transform: translateX(16px); }
+
+  .rule-list { display: flex; flex-direction: column; gap: 8px; }
+  .rule-item { display: flex; gap: 8px; align-items: center; }
+  .rule-item input { flex: 1; }
+  .btn-remove { background: none; border: 1px solid var(--error); color: var(--error);
+                padding: 5px 9px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+  .btn-remove:hover { background: var(--error); color: white; }
+
+  .actions { display: flex; gap: 12px; margin-top: 24px; align-items: center; }
+  .btn { padding: 9px 20px; border-radius: 7px; font-size: 13px; font-weight: 600;
+         border: none; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+  .btn-success { background: var(--accent2); color: white; }
+  .btn-add { background: transparent; border: 1px dashed var(--border); color: var(--muted);
+             padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+             margin-top: 6px; width: 100%; }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  #statusMsg { font-size: 12px; padding: 7px 14px; border-radius: 6px; display: none; }
+  .msg-ok    { background: rgba(16,185,129,.15); color: var(--accent2); border: 1px solid var(--accent2); }
+  .msg-err   { background: rgba(239,68,68,.12); color: var(--error); border: 1px solid var(--error); }
+
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 12px; font-size: 11px;
+           font-weight: 600; }
+  .badge-ok   { background: rgba(16,185,129,.15); color: var(--accent2); }
+  .badge-warn { background: rgba(245,158,11,.15); color: var(--warn); }
+  .badge-err  { background: rgba(239,68,68,.12);  color: var(--error); }
+
+  .span2 { grid-column: span 2; }
+  @media(max-width:900px){ .span2 { grid-column: span 1; } }
+</style>
+</head>
+<body>
+
+<h1>⚙ Environment Monitoring Plugin</h1>
+<p class="subtitle">Configureer checks, drempelwaarden en de web service target</p>
+
+<div class="grid">
+
+  <!-- ── Web Service ──────────────────────────────────────── -->
+  <div class="card">
+    <h2>Web Service API</h2>
+    <div class="field"><label>Base URL (POST endpoint)</label>
+      <input type="text" id="webserviceBaseUrl" placeholder="https://monitoring.example.com/api/events"/></div>
+    <div class="field"><label>Gebruikersnaam</label>
+      <input type="text" id="webserviceUsername"/></div>
+    <div class="field"><label>Wachtwoord</label>
+      <input type="password" id="webservicePassword" placeholder="(ongewijzigd laten = huidige waarde)"/></div>
+    <div class="field"><label>Content-Type</label>
+      <input type="text" id="webserviceContentType" value="application/json"/></div>
+    <div class="field"><label>Timeout (seconden)</label>
+      <input type="number" id="webserviceTimeoutSeconds" value="30" min="5" max="120"/></div>
+  </div>
+
+  <!-- ── Checks ───────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Checks activeren</h2>
+    <div class="toggle-row">
+      <span class="toggle-label">🏥 Health Ping</span>
+      <label class="toggle"><input type="checkbox" id="enableHealthPing" checked/><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">❌ Gefaalde Tasks</span>
+      <label class="toggle"><input type="checkbox" id="enableFailedTasks" checked/><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">🔒 Gefaald Provisioning</span>
+      <label class="toggle"><input type="checkbox" id="enableFailedProvisioning" checked/><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">📊 Provisioning Delta</span>
+      <label class="toggle"><input type="checkbox" id="enableProvisioningDelta" checked/><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">🔌 Application Health</span>
+      <label class="toggle"><input type="checkbox" id="enableApplicationHealth" checked/><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <!-- ── Delta thresholds ─────────────────────────────────── -->
+  <div class="card">
+    <h2>Provisioning Delta Drempelwaarden</h2>
+    <div class="field"><label>WARNING bij daling van (%)</label>
+      <input type="number" id="provisioningDeltaWarningPct" value="50" min="1" max="99"/></div>
+    <div class="field"><label>ERROR bij daling van (%)</label>
+      <input type="number" id="provisioningDeltaErrorPct" value="80" min="1" max="99"/></div>
+  </div>
+
+  <!-- ── App health ────────────────────────────────────────── -->
+  <div class="card">
+    <h2>Application Health Filter</h2>
+    <div class="field"><label>Alleen controleren (kommalijst, leeg = alles)</label>
+      <input type="text" id="applicationHealthIncluded" placeholder="AppA, AppB"/></div>
+    <div class="field"><label>Uitzonderen (kommalijst)</label>
+      <input type="text" id="applicationHealthExcluded" placeholder="TestApp"/></div>
+  </div>
+
+  <!-- ── Custom BeanShell rules ───────────────────────────── -->
+  <div class="card span2">
+    <h2>Custom BeanShell Rules</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:12px">
+      Voeg Rule-namen toe (moeten Boolean teruggeven). Formaat: <em>RuleNaam | Weergavenaam</em>
+    </p>
+    <div class="rule-list" id="ruleList"></div>
+    <button class="btn-add" onclick="addRule()">+ Regel toevoegen</button>
+  </div>
+
+  <!-- ── Velocity template ─────────────────────────────────── -->
+  <div class="card span2">
+    <h2>Body Template (Apache Velocity)</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:10px">
+      Beschikbare variabelen: <code>$result.overallStatus</code> &nbsp;
+      <code>$now</code> &nbsp; <code>$result.checkResults</code> &nbsp;
+      <code>$checks.FailedTasks.status</code>
+    </p>
+    <div class="field">
+      <textarea id="bodyTemplate" rows="14">{
+  "source": "SailPointIIQ",
+  "status": "$result.overallStatus",
+  "timestamp": "$now",
+  "checks": {
+#foreach($check in $result.checkResults)
+    "$check.checkName": {
+      "status": "$check.status",
+      "message": "$check.message"
+    }#if($foreach.hasNext),#end
+#end
+  }
+}</textarea>
+    </div>
+  </div>
+
+</div><!-- /.grid -->
+
+<div class="actions">
+  <button class="btn btn-primary" onclick="saveConfig()">💾 Opslaan</button>
+  <button class="btn btn-success" onclick="runNow()">▶ Nu uitvoeren</button>
+  <button class="btn btn-secondary" onclick="loadConfig()">↺ Herladen</button>
+  <span id="statusMsg"></span>
+</div>
+
+<script>
+const API = SailPoint.CONTEXT_PATH + '/plugin/rest/EnvironmentMonitoringPlugin/monitoring';
+
+async function loadConfig() {
+  try {
+    const r = await fetch(API + '/config');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const cfg = await r.json();
+    setFields(cfg);
+    showMsg('Configuratie geladen', 'ok');
+  } catch(e) {
+    showMsg('Laden mislukt: ' + e.message, 'err');
+  }
+}
+
+function setFields(cfg) {
+  ['webserviceBaseUrl','webserviceUsername','webservicePassword',
+   'webserviceContentType','webserviceTimeoutSeconds',
+   'provisioningDeltaWarningPct','provisioningDeltaErrorPct',
+   'applicationHealthIncluded','applicationHealthExcluded','bodyTemplate']
+    .forEach(k => { if (cfg[k] !== undefined) setVal(k, cfg[k]); });
+
+  ['enableHealthPing','enableFailedTasks','enableFailedProvisioning',
+   'enableProvisioningDelta','enableApplicationHealth']
+    .forEach(k => { if (cfg[k] !== undefined) document.getElementById(k).checked = (cfg[k] === true || cfg[k] === 'true'); });
+
+  // Custom rules
+  document.getElementById('ruleList').innerHTML = '';
+  const rules = cfg.customRules || [];
+  rules.forEach(r => addRule(r));
+}
+
+function setVal(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.value = v;
+}
+
+async function saveConfig() {
+  const cfg = {};
+  ['webserviceBaseUrl','webserviceUsername','webservicePassword',
+   'webserviceContentType','webserviceTimeoutSeconds',
+   'provisioningDeltaWarningPct','provisioningDeltaErrorPct',
+   'applicationHealthIncluded','applicationHealthExcluded','bodyTemplate']
+    .forEach(k => { cfg[k] = document.getElementById(k).value; });
+
+  ['enableHealthPing','enableFailedTasks','enableFailedProvisioning',
+   'enableProvisioningDelta','enableApplicationHealth']
+    .forEach(k => { cfg[k] = document.getElementById(k).checked; });
+
+  // Collect rules
+  const rows = document.querySelectorAll('.rule-entry');
+  cfg.customRules = Array.from(rows).map(row => {
+    const ins = row.querySelectorAll('input');
+    return ins[0].value + '|' + ins[1].value;
+  }).filter(v => v.startsWith('|') === false && v.trim().length > 1);
+
+  try {
+    const r = await fetch(API + '/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    showMsg('Configuratie opgeslagen ✓', 'ok');
+  } catch(e) {
+    showMsg('Opslaan mislukt: ' + e.message, 'err');
+  }
+}
+
+async function runNow() {
+  try {
+    const r = await fetch(API + '/runNow', { method: 'POST' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    showMsg('Monitoring gestart – bekijk de Task Results ✓', 'ok');
+  } catch(e) {
+    showMsg('Uitvoeren mislukt: ' + e.message, 'err');
+  }
+}
+
+function addRule(value) {
+  const list = document.getElementById('ruleList');
+  const div  = document.createElement('div');
+  div.className = 'rule-item rule-entry';
+  const parts = (value || '').split('|');
+  div.innerHTML = `
+    <input type="text" placeholder="RuleNaam (IIQ)" value="${parts[0]||''}"/>
+    <input type="text" placeholder="Weergavenaam" value="${parts[1]||''}"/>
+    <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>`;
+  list.appendChild(div);
+}
+
+function showMsg(msg, type) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'badge ' + (type === 'ok' ? 'badge-ok' : 'badge-err');
+  el.style.display = 'inline-block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// Load on page open
+loadConfig();
+</script>
+</body>
+</html>

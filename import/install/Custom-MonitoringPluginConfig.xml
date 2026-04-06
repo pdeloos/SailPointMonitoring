@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sailpoint PUBLIC "sailpoint.dtd" "sailpoint.dtd">
+<sailpoint>
+
+  <!--
+    Default configuration for the Environment Monitoring Plugin.
+    Customise all values to fit your environment before deploying.
+  -->
+  <Custom name="MonitoringPluginConfig">
+    <Attributes>
+      <Map>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             WEB SERVICE TARGET
+             ═══════════════════════════════════════════════════════════════ -->
+        <entry key="webserviceBaseUrl"        value="https://monitoring.example.com/api/events"/>
+        <entry key="webserviceUsername"       value="monitorUser"/>
+        <entry key="webservicePassword"       value="changeme"/>
+        <entry key="webserviceContentType"    value="application/json"/>
+        <entry key="webserviceTimeoutSeconds" value="30"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             VELOCITY BODY TEMPLATE
+             Available variables:
+               $result.overallStatus      (OK|WARNING|ERROR|UNKNOWN)
+               $result.timestamp          (java.util.Date)
+               $now                       (ISO-8601 string, UTC)
+               $result.checkResults       (List of CheckResult)
+               $checks.FailedTasks        (direct CheckResult access by name)
+             ═══════════════════════════════════════════════════════════════ -->
+        <entry key="bodyTemplate">
+          <value>
+            <String><![CDATA[{
+  "source": "SailPointIIQ",
+  "status": "$result.overallStatus",
+  "timestamp": "$now",
+  "checks": {
+#foreach($check in $result.checkResults)
+    "$check.checkName": {
+      "status": "$check.status",
+      "message": "$check.message"
+    }#if($foreach.hasNext),#end
+#end
+  }
+}]]></String>
+          </value>
+        </entry>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             CHECKS – enable / disable
+             ═══════════════════════════════════════════════════════════════ -->
+        <entry key="enableHealthPing"          value="true"/>
+        <entry key="enableFailedTasks"         value="true"/>
+        <entry key="enableFailedProvisioning"  value="true"/>
+        <entry key="enableProvisioningDelta"   value="true"/>
+        <entry key="enableApplicationHealth"   value="true"/>
+
+        <!-- Provisioning delta thresholds (percent drop vs yesterday) -->
+        <entry key="provisioningDeltaWarningPct" value="50"/>
+        <entry key="provisioningDeltaErrorPct"   value="80"/>
+
+        <!-- Application health: comma-separated lists (empty = all / none) -->
+        <entry key="applicationHealthIncluded" value=""/>
+        <entry key="applicationHealthExcluded" value=""/>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             CUSTOM BEANSHELL RULES
+             Format: one entry per rule, value = "RuleName|Display Label"
+             The Rule must return a Boolean.
+             ═══════════════════════════════════════════════════════════════ -->
+        <entry key="customRules">
+          <value>
+            <List>
+              <!-- <String>MyCustomHealthRule|My Custom Check</String> -->
+            </List>
+          </value>
+        </entry>
+
+      </Map>
+    </Attributes>
+  </Custom>
+
+</sailpoint>
