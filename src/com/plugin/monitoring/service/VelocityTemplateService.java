@@ -1,7 +1,6 @@
 package com.plugin.monitoring.service;
 
 import com.plugin.monitoring.model.MonitoringResult;
-import com.plugin.monitoring.model.MonitoringResult.CheckResult;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,61 +40,54 @@ import java.util.*;
  * }</pre>
  */
 public class VelocityTemplateService {
-
-    private static final Log log = LogFactory.getLog(VelocityTemplateService.class);
-
-    private static final String ISO_FMT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
-    private final VelocityEngine engine;
-
-    public VelocityTemplateService() {
-        engine = new VelocityEngine();
-        //engine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
-        engine.setProperty("runtime.log.logsystem.log4j.logger",
-                VelocityTemplateService.class.getName());
-        try {
-            engine.init();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to initialise VelocityEngine", e);
-        }
+  
+  private static final Log log = LogFactory.getLog(VelocityTemplateService.class);
+  
+  private static final String ISO_FMT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+  
+  private final VelocityEngine engine;
+  
+  public VelocityTemplateService() {
+    engine = new VelocityEngine();
+    //engine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
+    engine.setProperty("runtime.log.logsystem.log4j.logger",
+            VelocityTemplateService.class.getName());
+    try {
+      engine.init();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to initialise VelocityEngine", e);
     }
-
-    /**
-     * Renders {@code template} with the given monitoring result.
-     *
-     * @param template    Velocity template string
-     * @param result      monitoring result to expose
-     * @return rendered string
-     */
-    public String render(String template, MonitoringResult result) throws Exception {
-        VelocityContext vc = buildContext(result);
-        StringWriter out = new StringWriter();
-        engine.evaluate(vc, out, "MonitoringPlugin", template);
-        return out.toString();
-    }
-
-    // -------------------------------------------------------
-    private VelocityContext buildContext(MonitoringResult result) {
-        VelocityContext vc = new VelocityContext();
-
-        vc.put("result", result);
-
-        // Named map for convenient $checks.FailedTasks.status access
-        Map<String, CheckResult> checks = new LinkedHashMap<>();
-        for (CheckResult cr : result.getCheckResults()) {
-            checks.put(cr.getCheckName(), cr);
-        }
-        vc.put("checks", checks);
-
-        // Formatted ISO timestamp
-        java.text.SimpleDateFormat sdf =
-                new java.text.SimpleDateFormat(ISO_FMT, Locale.US);
-        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        vc.put("now", sdf.format(result.getTimestamp()));
-
-        // Utility
-        vc.put("newline", "\n");
-
-        return vc;
-    }
+  }
+  
+  /**
+   * Renders {@code template} with the given monitoring result.
+   *
+   * @param template Velocity template string
+   * @param result   monitoring result to expose
+   * @return rendered string
+   */
+  public String render(String template, MonitoringResult result) throws Exception {
+    VelocityContext vc = buildContext(result);
+    StringWriter out = new StringWriter();
+    engine.evaluate(vc, out, "MonitoringPlugin", template);
+    return out.toString();
+  }
+  
+  // -------------------------------------------------------
+  private VelocityContext buildContext(MonitoringResult result) {
+    VelocityContext vc = new VelocityContext();
+    
+    vc.put("result", result);
+    
+    // Formatted ISO timestamp
+    java.text.SimpleDateFormat sdf =
+            new java.text.SimpleDateFormat(ISO_FMT, Locale.US);
+    sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+    vc.put("now", sdf.format(result.getTimestamp()));
+    
+    // Utility
+    vc.put("newline", "\n");
+    
+    return vc;
+  }
 }

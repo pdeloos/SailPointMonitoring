@@ -1,6 +1,6 @@
 package com.plugin.monitoring.checks;
 
-import com.plugin.monitoring.model.MonitoringResult.CheckResult;
+import com.plugin.monitoring.model.MonitoringResult;
 import com.plugin.monitoring.model.MonitoringResult.Status;
 import sailpoint.api.SailPointContext;
 import sailpoint.object.Identity;
@@ -8,6 +8,8 @@ import sailpoint.tools.GeneralException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.List;
 
 /**
  * Verifies that the SailPoint IIQ environment is reachable and responsive
@@ -21,7 +23,7 @@ public class HealthPingCheck implements IMonitoringCheck {
     public String getName() { return "HealthPing"; }
 
     @Override
-    public CheckResult execute(SailPointContext context) {
+    public List<MonitoringResult> execute(SailPointContext context) {
         long start = System.currentTimeMillis();
         try {
             // A minimal DB round-trip: fetch spadmin (always exists)
@@ -29,19 +31,19 @@ public class HealthPingCheck implements IMonitoringCheck {
             long elapsed = System.currentTimeMillis() - start;
 
             if (spadmin != null) {
-                return new CheckResult(getName(), Status.OK,
+                return List.of(new MonitoringResult(getName(), Status.OK,
                         "Environment is healthy (response " + elapsed + " ms)")
-                        .addDetail("responseTimeMs", elapsed);
+                        .addDetail("responseTimeMs", elapsed));
             } else {
-                return new CheckResult(getName(), Status.WARNING,
+                return List.of(new MonitoringResult(getName(), Status.WARNING,
                         "spadmin not found – environment may be mis-configured")
-                        .addDetail("responseTimeMs", elapsed);
+                        .addDetail("responseTimeMs", elapsed));
             }
         } catch (Exception e) {
             log.error("HealthPingCheck failed", e);
-            return new CheckResult(getName(), Status.ERROR,
+            return List.of(new MonitoringResult(getName(), Status.ERROR,
                     "Health ping failed: " + e.getMessage())
-                    .addDetail("exception", e.getClass().getSimpleName());
+                    .addDetail("exception", e.getClass().getSimpleName()));
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.plugin.monitoring.checks;
 
-import com.plugin.monitoring.model.MonitoringResult.CheckResult;
+import com.plugin.monitoring.model.MonitoringResult;
 import com.plugin.monitoring.model.MonitoringResult.Status;
 import sailpoint.api.SailPointContext;
 import sailpoint.object.*;
@@ -32,7 +32,7 @@ public class FailedProvisioningCheck implements IMonitoringCheck {
     public String getName() { return "FailedProvisioning"; }
 
     @Override
-    public CheckResult execute(SailPointContext context) throws GeneralException {
+    public List<MonitoringResult> execute(SailPointContext context) throws GeneralException {
         Date since = new Date(System.currentTimeMillis() - lookbackMs);
         int failedCount = 0;
         List<Map<String, Object>> failedList = new ArrayList<>();
@@ -92,14 +92,14 @@ public class FailedProvisioningCheck implements IMonitoringCheck {
         }
 
         if (failedCount == 0) {
-            return new CheckResult(getName(), Status.OK,
+            return List.of(new MonitoringResult(getName(), Status.OK,
                     "No failed provisioning actions in the last 24 hours")
-                    .addDetail("failedCount", 0);
+                    .addDetail("failedCount", 0));
         }
 
-        return new CheckResult(getName(), Status.ERROR,
+        return List.of(new MonitoringResult(getName(), Status.ERROR,
                 failedCount + " failed provisioning action(s) detected")
                 .addDetail("failedCount", failedCount)
-                .addDetail("failedItems", failedList);
+                .addDetail("failedItems", failedList));
     }
 }

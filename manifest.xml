@@ -1,10 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE Plugin PUBLIC "sailpoint.dtd" "sailpoint.dtd">
 <Plugin name="SailPointMonitoring"
-        version="1.0"
+        version="1.2.13"
         minSystemVersion="8.0"
         displayName="Environment Monitoring Plugin">
-  
   <Attributes>
     <Map>
       <entry key="serviceExecutors">
@@ -23,17 +22,19 @@
       <entry key="settings">
         <value>
           <List>
-            <Setting dataType="string" name="webserviceBaseUrl"/>
+            <Setting dataType="string" name="webserviceBaseUrl" defaultValue="http://localhost:8081/api/events"/>
             <Setting dataType="string" name="webserviceUsername"/>
             <Setting dataType="secret" name="webservicePassword"/>
-            <Setting dataType="boolean" name="enableHealthPing"/>
-            <Setting dataType="boolean" name="enableFailedTasks"/>
+            <Setting dataType="string" name="bodyTemplate"/>
+            <Setting dataType="boolean" name="enableHealthPing" defaultValue="true"/>
+            <Setting dataType="boolean" name="enableFailedTasks" defaultValue="true"/>
             <Setting dataType="string" name="failedTasksRegularExpressionFilter"/>
-            <Setting dataType="boolean" name="enableFailedProvisioning"/>
-            <Setting dataType="boolean" name="enableProvisioningDelta"/>
-            <Setting dataType="int" name="provisioningDeltaWarningPct"/>
-            <Setting dataType="int" name="provisioningDeltaErrorPct"/>
-            <Setting dataType="boolean" name="enableApplicationHealth"/>
+            <Setting dataType="boolean" name="enableFailedProvisioning" defaultValue="true"/>
+            <Setting dataType="boolean" name="enableProvisioningDelta" defaultValue="true"/>
+            <Setting dataType="int" name="provisioningDeltaWarningPct" defaultValue="20"/>
+            <Setting dataType="int" name="provisioningDeltaErrorPct" defaultValue="50"/>
+            <Setting dataType="boolean" name="enableApplicationHealth" defaultValue="true"/>
+            <Setting dataType="string" name="applicationHealthExcluded"/>
             <Setting dataType="string" name="customRules"/>
           </List>
         </value>
@@ -45,6 +46,7 @@
               <Field columnSpan="2" type="string" helpKey="The url to which monitoring results will be sent" displayName="Web service base url" name="webserviceBaseUrl"/>
               <Field type="string" helpKey="The user name that will be used to authenticate the web service call" displayName="Web service user name" name="webserviceUsername"/>
               <Field type="secret" helpKey="The password that will be used to authenticate the web service call" displayName="Web service password" name="webservicePassword"/>
+              <Field type="string" helpKey="The Velocity based body template" displayName="Body template" name="bodyTemplate"/>
             </Section>
             <Section columns="2" label="Health ping settings" name="HealthPingSettings">
               <Field columnSpan="2" type="boolean" helpKey="Enable the plugin to send a health ping" displayName="Enable health ping" name="enableHealthPing"/>
@@ -63,9 +65,10 @@
             </Section>
             <Section columns="2" label="Application health reporting" name="ApplicationHealthReporting">
               <Field type="boolean" helpKey="Enable application health reporting" displayName="Enable application health reporting" name="enableApplicationHealth"/>
+              <Field type="string" helpKey="List of applications not to check" displayName="List of applications not to check" multi="true" name="applicationHealthExcluded"/>
             </Section>
             <Section columns="2" label="Custom rule settings" name="CustomRuleSettings">
-              <Field type="string" helpKey="List of custom rules to execute" displayName="List of custom rules" name="customRules"/>
+              <Field type="string" helpKey="List of custom rules to execute" displayName="List of custom rules" multi="true" name="customRules"/>
             </Section>
           </Form>
         </value>

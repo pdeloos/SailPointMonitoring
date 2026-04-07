@@ -10,6 +10,7 @@ import sailpoint.tools.GeneralException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import sailpoint.tools.Util;
 
 import java.util.*;
 
@@ -42,143 +43,129 @@ public class MonitoringService extends BasePluginService {
    */
   @Override
   public void execute(SailPointContext context) throws GeneralException {
-    Custom cfg = context.getObjectByName(Custom.class, CONFIG_OBJECT);
-    log.error("RUNNING NOW");
-    if (cfg == null) {
-      log.error("MonitoringPluginConfig Custom object not found – aborting");
-      return;
-    }
-    
-    Attributes<String, Object> attrs = cfg.getAttributes();
+    log.debug("Start monitoring run");
     
     // ── Collect & execute checks ──────────────────────────────────────
-    MonitoringResult result = new MonitoringResult();
-    List<IMonitoringCheck> checks = buildChecks(attrs);
+    List<MonitoringResult> results = new ArrayList<MonitoringResult>();
+    List<IMonitoringCheck> checks = buildChecks();
     
     for (IMonitoringCheck check : checks) {
       try {
-        MonitoringResult.CheckResult cr = check.execute(context);
-        result.addCheckResult(cr);
-        log.debug("Check [" + check.getName() + "] → " + cr.getStatus()
-                + ": " + cr.getMessage());
+        List<MonitoringResult> subResults = check.execute(context);
+        
+        for (MonitoringResult result : subResults) {
+          log.debug("Check [" + check.getName() + "] " + result.getStatus()
+                  + ": " + result.getMessage());
+          results.add(result);
+        }
       } catch (Exception e) {
         log.error("Unexpected error executing check " + check.getName(), e);
-        result.addCheckResult(new MonitoringResult.CheckResult(
+        MonitoringResult result = (new MonitoringResult(
                 check.getName(),
                 MonitoringResult.Status.ERROR,
                 "Check threw unexpected exception: " + e.getMessage()));
+        results.add(result);
       }
     }
     
     // ── Render body ───────────────────────────────────────────────────
-    String template = getString(attrs, "bodyTemplate", "");
-    if (template.isEmpty()) {
-      log.warn("bodyTemplate is empty – sending empty body");
+    String template = getSettingString("bodyTemplate");
+    if (Util.isNullOrEmpty(template)) {
+      log.warn("bodyTemplate is empty – sending default body");
+      template = "<![CDATA[{\n" +
+              "  \"source\": \"SailPointIIQ\",\n" +
+              "  \"status\": \"$result.overallStatus\",\n" +
+              "  \"timestamp\": \"$now\",\n" +
+              "  \"checks\": {\n" +
+              "#foreach($check in $result.checkResults)\n" +
+              "    \"$check.checkName\": {\n" +
+              "      \"status\": \"$check.status\",\n" +
+              "      \"message\": \"$check.message\"\n" +
+              "    }#if($foreach.hasNext),#end\n" +
+              "#end\n" +
+              "  }\n" +
+              "}]]>";
     }
     
     String body;
-    try {
-      body = velocityService.render(template, result);
-    } catch (Exception e) {
-      log.error("Velocity rendering failed", e);
-      body = "{\"error\":\"Velocity rendering failed: " + e.getMessage() + "\"}";
-    }
     
-    // ── Send ──────────────────────────────────────────────────────────
-    String url = getSettingString("webserviceBaseUrl");
-    String user = getString(attrs, "webserviceUsername", "");
-    String pass = getString(attrs, "webservicePassword", "");
-    String ctype = getString(attrs, "webserviceContentType", "application/json");
-    int timeout = getInt(attrs, "webserviceTimeoutSeconds", 30);
-    
-    if (url.isEmpty()) {
-      log.error("webserviceBaseUrl is not configured – monitoring payload discarded");
-      return;
-    }
-    
-    WebServiceSenderService sender =
-            new WebServiceSenderService(url, user, pass, ctype, timeout);
-    try {
-      sender.send(body);
-    } catch (WebServiceException e) {
-      log.error("Failed to send monitoring payload: " + e.getMessage(), e);
+    for (MonitoringResult result : results) {
+      try {
+        body = velocityService.render(template, result);
+        
+      } catch (Exception e) {
+        log.error("Velocity rendering failed", e);
+        body = "{\"error\":\"Velocity rendering failed: " + e.getMessage() + "\"}";
+      }
+      
+      // ── Send ──────────────────────────────────────────────────────────
+      String url = getSettingString("webserviceBaseUrl");
+      
+      //to do: make this configurable
+      if("ApplicationHealth".equals(result.getCheckName())) {
+        url += "/application/" + result.getDetails().get("applicationName");
+      }
+      
+      
+      String user = getSettingString("webserviceUsername");
+      String pass = getSettingString("webservicePassword");
+      int timeout = getSettingInt("webserviceTimeoutSeconds");
+      
+      if (url.isEmpty()) {
+        log.error("webserviceBaseUrl is not configured – monitoring payload discarded");
+        return;
+      }
+      
+      WebServiceSenderService sender =
+              new WebServiceSenderService(url, user, pass, "application/json", timeout);
+      try {
+        sender.send(body);
+        log.debug(body);
+      } catch (WebServiceException e) {
+        log.error("Failed to send monitoring payload: " + e.getMessage(), e);
+      }
     }
   }
   
   
   // -------------------------------------------------------
-  private List<IMonitoringCheck> buildChecks(Attributes<String, Object> attrs) {
+  private List<IMonitoringCheck> buildChecks() {
     List<IMonitoringCheck> list = new ArrayList<>();
     
-    if (getBool(attrs, "enableHealthPing", true)) {
+    if (getSettingBool("enableHealthPing")) {
+      log.debug("Enable health is enabled");
       list.add(new HealthPingCheck());
     }
-    if (getBool(attrs, "enableFailedTasks", true)) {
+    if (getSettingBool("enableFailedTasks")) {
+      log.debug("Enable failed tasks is enabled");
       list.add(new FailedTasksCheck());
     }
-    if (getBool(attrs, "enableFailedProvisioning", true)) {
+    if (getSettingBool("enableFailedProvisioning")) {
+      log.debug("Enable failed provisioning is enabled");
       list.add(new FailedProvisioningCheck());
     }
-    if (getBool(attrs, "enableProvisioningDelta", true)) {
-      int wPct = getInt(attrs, "provisioningDeltaWarningPct", 50);
-      int ePct = getInt(attrs, "provisioningDeltaErrorPct", 80);
+    if (getSettingBool("enableProvisioningDelta")) {
+      log.debug("Enable provisioning delta is enabled");
+      int wPct = getSettingInt("provisioningDeltaWarningPct");
+      int ePct = getSettingInt("provisioningDeltaErrorPct");
       list.add(new ProvisioningDeltaCheck(wPct, ePct));
     }
-    if (getBool(attrs, "enableApplicationHealth", true)) {
-      List<String> inc = csvToList(getString(attrs, "applicationHealthIncluded", ""));
-      List<String> exc = csvToList(getString(attrs, "applicationHealthExcluded", ""));
-      list.add(new ApplicationHealthCheck(inc, exc));
+    if (getSettingBool("enableApplicationHealth")) {
+      log.debug("Enable application health is enabled");
+      List<String> exc = getSettingMultiString("applicationHealthExcluded");
+      list.add(new ApplicationHealthCheck(exc));
     }
     
     // Custom BeanShell rules: each entry is "ruleName|displayName"
-    Object rawRules = attrs.get("customRules");
-    if (rawRules instanceof List) {
-      for (Object entry : (List<?>) rawRules) {
-        if (entry == null) continue;
-        String[] parts = entry.toString().split("\\|", 2);
-        String ruleName = parts[0].trim();
-        String displayName = parts.length > 1 ? parts[1].trim() : ruleName;
-        if (!ruleName.isEmpty()) {
-          list.add(new BeanshellCustomCheck(ruleName, displayName));
-        }
+    List<String> rawRules = getSettingMultiString("customRules");
+    for (String entry : rawRules) {
+      if (entry == null) continue;
+      if (!entry.isEmpty()) {
+        list.add(new BeanshellCustomCheck(entry, entry));
       }
     }
     
     return list;
   }
-  
-  // ── Helpers ──────────────────────────────────────────────────────────
-  private String getString(Attributes<String, Object> a, String key, String def) {
-    Object v = a.get(key);
-    return (v != null) ? v.toString() : def;
-  }
-  
-  private boolean getBool(Attributes<String, Object> a, String key, boolean def) {
-    Object v = a.get(key);
-    if (v == null) return def;
-    if (v instanceof Boolean) return (Boolean) v;
-    return Boolean.parseBoolean(v.toString());
-  }
-  
-  private int getInt(Attributes<String, Object> a, String key, int def) {
-    Object v = a.get(key);
-    if (v == null) return def;
-    try {
-      return Integer.parseInt(v.toString());
-    } catch (NumberFormatException e) {
-      return def;
-    }
-  }
-  
-  private List<String> csvToList(String csv) {
-    List<String> list = new ArrayList<>();
-    if (csv == null || csv.trim().isEmpty()) return list;
-    for (String s : csv.split(",")) {
-      String t = s.trim();
-      if (!t.isEmpty()) list.add(t);
-    }
-    return list;
-  }
-  
   
 }

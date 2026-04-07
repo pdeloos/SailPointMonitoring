@@ -6,7 +6,6 @@
   <property name="iiq.home" value="C:\apps\tomcat\webapps\ROOT"/>
   <property name="buildPlugins" value="build"/>
   <property name="pluginName" value="SailPointMonitoring"/>
-  <property name="version" value="1.0.0"/>
   
   <target name="clean">
     <echo message="Starting clean target"/>
@@ -58,7 +57,7 @@
         <include name="lib/*.jar"/>
       </fileset>
     </copy>
-    <zip encoding="UTF-8" baseDir="${pluginContents}" destfile="${pluginBuild}/dist/${pluginName}.${version}.zip">
+    <zip encoding="UTF-8" baseDir="${pluginContents}" destfile="${pluginBuild}/dist/${pluginName}.zip">
     </zip>
   </target>
 </project>

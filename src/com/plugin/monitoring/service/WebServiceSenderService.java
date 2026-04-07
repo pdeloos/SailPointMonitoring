@@ -75,7 +75,7 @@ public class WebServiceSenderService {
             post.setHeader("Authorization", "Basic " + encoded);
             post.setHeader("Content-Type", contentType);
 
-            post.setEntity(new StringEntity(body,
+            post.setEntity(new StringEntity(body + "\n",
                     ContentType.create(contentType, StandardCharsets.UTF_8)));
 
             HttpResponse response = client.execute(post);

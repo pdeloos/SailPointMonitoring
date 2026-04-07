@@ -1,6 +1,6 @@
 package com.plugin.monitoring.checks;
 
-import com.plugin.monitoring.model.MonitoringResult.CheckResult;
+import com.plugin.monitoring.model.MonitoringResult;
 import com.plugin.monitoring.model.MonitoringResult.Status;
 import sailpoint.api.SailPointContext;
 import sailpoint.object.*;
@@ -34,7 +34,7 @@ public class FailedTasksCheck implements IMonitoringCheck {
     public String getName() { return "FailedTasks"; }
 
     @Override
-    public CheckResult execute(SailPointContext context) throws GeneralException {
+    public List<MonitoringResult> execute(SailPointContext context) throws GeneralException {
         Date since = new Date(System.currentTimeMillis() - lookbackMs);
 
         QueryOptions qo = new QueryOptions();
@@ -49,9 +49,9 @@ public class FailedTasksCheck implements IMonitoringCheck {
         List<TaskResult> results = context.getObjects(TaskResult.class, qo);
 
         if (results == null || results.isEmpty()) {
-            return new CheckResult(getName(), Status.OK,
+            return List.of(new MonitoringResult(getName(), Status.OK,
                     "No failed tasks in the last 24 hours")
-                    .addDetail("failedCount", 0);
+                    .addDetail("failedCount", 0));
         }
 
         List<Map<String, Object>> failedList = new ArrayList<>();
@@ -67,9 +67,9 @@ public class FailedTasksCheck implements IMonitoringCheck {
             failedList.add(entry);
         }
 
-        return new CheckResult(getName(), Status.ERROR,
+        return List.of(new MonitoringResult(getName(), Status.ERROR,
                 results.size() + " failed task(s) detected in the last 24 hours")
                 .addDetail("failedCount", results.size())
-                .addDetail("failedTasks", failedList);
+                .addDetail("failedTasks", failedList));
     }
 }

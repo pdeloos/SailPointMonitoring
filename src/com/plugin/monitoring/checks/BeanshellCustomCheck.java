@@ -1,6 +1,6 @@
 package com.plugin.monitoring.checks;
 
-import com.plugin.monitoring.model.MonitoringResult.CheckResult;
+import com.plugin.monitoring.model.MonitoringResult;
 import com.plugin.monitoring.model.MonitoringResult.Status;
 import sailpoint.api.SailPointContext;
 import sailpoint.object.*;
@@ -10,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,19 +47,19 @@ public class BeanshellCustomCheck implements IMonitoringCheck {
     }
 
     @Override
-    public CheckResult execute(SailPointContext context) {
+    public List<MonitoringResult> execute(SailPointContext context) {
         Rule rule;
         try {
             rule = context.getObjectByName(Rule.class, ruleName);
         } catch (GeneralException e) {
             log.error("Cannot load rule '" + ruleName + "'", e);
-            return new CheckResult(getName(), Status.ERROR,
-                    "Rule '" + ruleName + "' could not be loaded: " + e.getMessage());
+            return List.of(new MonitoringResult(getName(), Status.ERROR,
+                    "Rule '" + ruleName + "' could not be loaded: " + e.getMessage()));
         }
 
         if (rule == null) {
-            return new CheckResult(getName(), Status.ERROR,
-                    "Rule '" + ruleName + "' not found in IIQ");
+            return List.of(new MonitoringResult(getName(), Status.ERROR,
+                    "Rule '" + ruleName + "' not found in IIQ"));
         }
 
         Map<String, Object> args = new HashMap<>();
@@ -69,24 +70,24 @@ public class BeanshellCustomCheck implements IMonitoringCheck {
 
             if (result instanceof Boolean) {
                 boolean ok = (Boolean) result;
-                return new CheckResult(getName(),
+                return List.of(new MonitoringResult(getName(),
                         ok ? Status.OK : Status.ERROR,
                         ok ? "Custom check passed" : "Custom check returned false")
                         .addDetail("ruleName",   ruleName)
-                        .addDetail("ruleResult", ok);
+                        .addDetail("ruleResult", ok));
             } else {
-                return new CheckResult(getName(), Status.WARNING,
+                return List.of(new MonitoringResult(getName(), Status.WARNING,
                         "Rule did not return a Boolean (returned: "
                         + (result == null ? "null" : result.getClass().getSimpleName()) + ")")
                         .addDetail("ruleName",   ruleName)
-                        .addDetail("ruleResult", String.valueOf(result));
+                        .addDetail("ruleResult", String.valueOf(result)));
             }
         } catch (Exception e) {
             log.error("BeanshellCustomCheck failed for rule '" + ruleName + "'", e);
-            return new CheckResult(getName(), Status.ERROR,
+            return List.of(new MonitoringResult(getName(), Status.ERROR,
                     "Rule execution failed: " + e.getMessage())
                     .addDetail("ruleName",   ruleName)
-                    .addDetail("exception",  e.getClass().getSimpleName());
+                    .addDetail("exception",  e.getClass().getSimpleName()));
         }
     }
 }
