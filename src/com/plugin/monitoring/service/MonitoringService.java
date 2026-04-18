@@ -155,6 +155,11 @@ public class MonitoringService extends BasePluginService {
       List<String> exc = getSettingMultiString("applicationHealthExcluded");
       list.add(new ApplicationHealthCheck(exc));
     }
+    if (getSettingBool("enableServerCompliance")) {
+      log.debug("Enable server compliance is enabled");
+      String serverComplianceJsonUrl = getSettingString("serverComplianceJsonUrl");
+      list.add(new ServerComplianceCheck(serverComplianceJsonUrl));
+    }
     
     // Custom BeanShell rules: each entry is "ruleName|displayName"
     List<String> rawRules = getSettingMultiString("customRules");

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE Plugin PUBLIC "sailpoint.dtd" "sailpoint.dtd">
 <Plugin name="SailPointMonitoring"
-        version="1.2.13"
+        version="1.2.18"
         minSystemVersion="8.0"
         displayName="Environment Monitoring Plugin">
   <Attributes>
@@ -36,6 +36,8 @@
             <Setting dataType="boolean" name="enableApplicationHealth" defaultValue="true"/>
             <Setting dataType="string" name="applicationHealthExcluded"/>
             <Setting dataType="string" name="customRules"/>
+            <Setting dataType="string" name="serverComplianceJsonUrl" defaultValue=""/>
+            <Setting dataType="boolean" name="enableServerCompliance" defaultValue="true"/>
           </List>
         </value>
       </entry>
@@ -66,6 +68,10 @@
             <Section columns="2" label="Application health reporting" name="ApplicationHealthReporting">
               <Field type="boolean" helpKey="Enable application health reporting" displayName="Enable application health reporting" name="enableApplicationHealth"/>
               <Field type="string" helpKey="List of applications not to check" displayName="List of applications not to check" multi="true" name="applicationHealthExcluded"/>
+            </Section>
+            <Section columns="2" label="Server Compliance settings" name="ServerComplianceSettings">
+              <Field columnSpan="2" type="boolean" helpKey="Enable server compliance checking" displayName="Enable server compliance check" name="enableServerCompliance"/>
+              <Field columnSpan="2" type="string" helpKey="URL to the compliance JSON file" displayName="Compliance JSON URL" name="serverComplianceJsonUrl"/>
             </Section>
             <Section columns="2" label="Custom rule settings" name="CustomRuleSettings">
               <Field type="string" helpKey="List of custom rules to execute" displayName="List of custom rules" multi="true" name="customRules"/>
