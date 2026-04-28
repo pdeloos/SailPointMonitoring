@@ -1,11 +1,18 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE Plugin PUBLIC "sailpoint.dtd" "sailpoint.dtd">
 <Plugin name="SailPointMonitoring"
-        version="1.2.18"
+        version="1.2.23"
         minSystemVersion="8.0"
         displayName="Environment Monitoring Plugin">
   <Attributes>
     <Map>
+      <entry key="scriptPackages">
+        <value>
+          <List>
+            <String>com.plugin.monitoring.model</String>
+          </List>
+        </value>
+      </entry>
       <entry key="serviceExecutors">
         <value>
           <List>
@@ -30,12 +37,11 @@
             <Setting dataType="boolean" name="enableFailedTasks" defaultValue="true"/>
             <Setting dataType="string" name="failedTasksRegularExpressionFilter"/>
             <Setting dataType="boolean" name="enableFailedProvisioning" defaultValue="true"/>
-            <Setting dataType="boolean" name="enableProvisioningDelta" defaultValue="true"/>
             <Setting dataType="int" name="provisioningDeltaWarningPct" defaultValue="20"/>
             <Setting dataType="int" name="provisioningDeltaErrorPct" defaultValue="50"/>
             <Setting dataType="boolean" name="enableApplicationHealth" defaultValue="true"/>
             <Setting dataType="string" name="applicationHealthExcluded"/>
-            <Setting dataType="string" name="customRules"/>
+            <Setting dataType="string" multiValue="true" name="customRules"/>
             <Setting dataType="string" name="serverComplianceJsonUrl" defaultValue=""/>
             <Setting dataType="boolean" name="enableServerCompliance" defaultValue="true"/>
           </List>
@@ -59,11 +65,6 @@
             </Section>
             <Section columns="2" label="Failed provisioning actions reporting" name="FailedProvisioningActionsReporting">
               <Field columnSpan="2" type="boolean" helpKey="Enable failed provisioning actions reporting" displayName="Enable failed provisioning reporting" name="enableFailedProvisioning"/>
-            </Section>
-            <Section columns="2" label="Provisioning action delta reporting" name="ProvisioningActionDeltaReporting">
-              <Field columnSpan="2" type="boolean" helpKey="Enable unusual provisioning action delta" displayName="Enable unusual provisioning delta reporting" name="enableProvisioningDelta"/>
-              <Field type="int" helpKey="Percentage of provisioning delta where a warning is sent" displayName="Provisioning delta warning percentage" name="provisioningDeltaWarningPct"/>
-              <Field type="int" helpKey="Percentage of provisioning delta where an error is sent" displayName="Provisioning delta error percentage" name="provisioningDeltaErrorPct"/>
             </Section>
             <Section columns="2" label="Application health reporting" name="ApplicationHealthReporting">
               <Field type="boolean" helpKey="Enable application health reporting" displayName="Enable application health reporting" name="enableApplicationHealth"/>

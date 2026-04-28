@@ -205,6 +205,9 @@ public class ServerComplianceCheck implements IMonitoringCheck {
           req.minimumVersion = minVersionMatcher.group(1);
         }
         
+        log.debug("MAJOR:" + req.majorVersion);
+        log.debug("MIN:" + req.minimumVersion);
+        
         if (req.majorVersion > 0 && req.minimumVersion != null) {
           requirements.add(req);
         }
@@ -271,7 +274,10 @@ public class ServerComplianceCheck implements IMonitoringCheck {
     // Find requirement for current major version
     JavaRequirement requirement = null;
     for (JavaRequirement req : data.javaRequirements) {
+      log.debug("REQ: " + javaMajorVersion);
+      log.debug("COMPARE: " + req.majorVersion);
       if (req.majorVersion == javaMajorVersion) {
+        log.debug("YES");
         requirement = req;
         break;
       }

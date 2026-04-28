@@ -3,6 +3,7 @@ package com.plugin.monitoring.service;
 import com.plugin.monitoring.checks.*;
 import com.plugin.monitoring.model.MonitoringResult;
 import com.plugin.monitoring.service.WebServiceSenderService.WebServiceException;
+import org.apache.commons.lang3.StringUtils;
 import sailpoint.api.SailPointContext;
 import sailpoint.object.*;
 import sailpoint.server.BasePluginService;
@@ -102,7 +103,7 @@ public class MonitoringService extends BasePluginService {
       String url = getSettingString("webserviceBaseUrl");
       
       //to do: make this configurable
-      if("ApplicationHealth".equals(result.getCheckName())) {
+      if ("ApplicationHealth".equals(result.getCheckName())) {
         url += "/application/" + result.getDetails().get("applicationName");
       }
       
@@ -144,12 +145,6 @@ public class MonitoringService extends BasePluginService {
       log.debug("Enable failed provisioning is enabled");
       list.add(new FailedProvisioningCheck());
     }
-    if (getSettingBool("enableProvisioningDelta")) {
-      log.debug("Enable provisioning delta is enabled");
-      int wPct = getSettingInt("provisioningDeltaWarningPct");
-      int ePct = getSettingInt("provisioningDeltaErrorPct");
-      list.add(new ProvisioningDeltaCheck(wPct, ePct));
-    }
     if (getSettingBool("enableApplicationHealth")) {
       log.debug("Enable application health is enabled");
       List<String> exc = getSettingMultiString("applicationHealthExcluded");
@@ -163,14 +158,14 @@ public class MonitoringService extends BasePluginService {
     
     // Custom BeanShell rules: each entry is "ruleName|displayName"
     List<String> rawRules = getSettingMultiString("customRules");
-    for (String entry : rawRules) {
-      if (entry == null) continue;
-      if (!entry.isEmpty()) {
-        list.add(new BeanshellCustomCheck(entry, entry));
+    for (String ruleName : rawRules) {
+      if (Util.isNotNullOrEmpty(ruleName)) {
+        String ruleName2 = StringUtils.removeAll(ruleName, "[\\[\\]]");
+        log.debug("Executing rule" + ruleName2);
+        list.add(new BeanshellCustomCheck(ruleName2, ruleName2));
       }
     }
     
     return list;
   }
-  
 }

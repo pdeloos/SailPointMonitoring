@@ -12,7 +12,6 @@
     <delete dir="${buildPlugins}"/>
   </target>
   
-  
   <target name="package">
     <property name="pluginBase" location="."/>
     <property name="pluginSrc" location="${pluginBase}/src"/>
